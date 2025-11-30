@@ -988,9 +988,21 @@
             }
         ];
 
+        // 3. ЕДИНАЯ ТОЧКА ВХОДА (Запуск всего при загрузке)
         document.addEventListener('DOMContentLoaded', () => {
-            tg.ready(); tg.expand(); tg.setHeaderColor('#050505'); tg.setBackgroundColor('#050505');
-            renderCharacters(); setLanguage('ru'); 
+            tg.ready(); 
+            tg.expand(); 
+            tg.setHeaderColor('#050505'); 
+            tg.setBackgroundColor('#050505');
+            
+            renderCharacters(); 
+            setLanguage('ru');
+            
+            // Запрашиваем баланс
+            fetchUserData(); 
+            
+            // Проверяем, админ ли это (показываем кнопку)
+            checkAdmin(); 
         });
 
         function renderCharacters() {

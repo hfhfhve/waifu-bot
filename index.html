@@ -1072,50 +1072,67 @@
         }
 
         // --- ЛОГИКА ОПЛАТЫ (НЕ ЗАКРЫВАЕТ ОКНО) ---
+        // --- НОВАЯ ЛОГИКА: МГНОВЕННАЯ ОПЛАТА ---
         function confirmPayment(method) {
             tg.HapticFeedback.selectionChanged();
             
-            // Если Webhook не настроен
             if (WEBHOOK_URL.includes("ВСТАВЬ_СЮДА")) {
-                tg.showAlert("Ошибка: Разработчик не указал Webhook URL в коде!");
+                tg.showAlert("Ошибка: Не настроен Webhook!");
                 return;
             }
-
+        
             const modalTitle = document.getElementById('modal-title');
             const originalText = modalTitle.innerText;
-            modalTitle.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ...';
-
-            // Собираем данные
+            
+            // Показываем загрузку
+            modalTitle.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Создаем счет...';
+        
             const userId = tg.initDataUnsafe?.user?.id;
-            const payload = {
-                action: "buy_invoice", 
-                pack_id: currentItem.id,
-                amount: method === 'stars' ? currentItem.amountStars : currentItem.amountRub,
-                currency: method === 'stars' ? 'XTR' : 'RUB', 
-                method: method,
-                chat_id: userId
-            };
-
-            // Отправляем тихо через Fetch
+            
+            // 1. Просим n8n создать ссылку на оплату
             fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    action: "buy_invoice", 
+                    pack_id: currentItem.id,
+                    amount: method === 'stars' ? currentItem.amountStars : currentItem.amountRub,
+                    currency: method === 'stars' ? 'XTR' : 'RUB', 
+                    method: method,
+                    chat_id: userId
+                })
             })
-            .then(response => {
-                if (response.ok) {
-                    tg.showAlert("Счет отправлен в чат! Оплатите и вернитесь.");
+            .then(response => response.json()) // Превращаем ответ в объект
+            .then(data => {
+                // n8n вернет ответ от Telegram. Ссылка лежит в поле 'result'
+                if (data.ok && data.result) {
+                    // 2. ОТКРЫВАЕМ НАТИВНОЕ ОКНО ОПЛАТЫ
+                    tg.openInvoice(data.result, (status) => {
+                        // Эта функция сработает, когда юзер закроет окно оплаты
+                        if (status === 'paid') {
+                            tg.showAlert("Успешная оплата! 🎉\nВалюта начислена.");
+                            closePaymentModal();
+                            // Тут можно обновить баланс на экране, если хочешь
+                        } else if (status === 'cancelled') {
+                            tg.showAlert("Оплата отменена.");
+                        } else if (status === 'pending') {
+                            tg.showAlert("Оплата обрабатывается...");
+                        } else {
+                            tg.showAlert("Статус оплаты: " + status);
+                        }
+                    });
                 } else {
-                    tg.showAlert("Ошибка сервера.");
+                    console.error(data);
+                    tg.showAlert("Ошибка создания счета (см. консоль)");
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                tg.showAlert("Счет отправлен (тестовый режим) или ошибка сети.");
+                tg.showAlert("Ошибка сети.");
             })
             .finally(() => {
-                modalTitle.innerText = originalText; 
-                closePaymentModal();
+                // Возвращаем текст заголовка
+                modalTitle.innerText = originalText;
             });
         }
 

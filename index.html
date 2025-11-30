@@ -732,6 +732,52 @@
 
     <!-- ================= JS ================= -->
     <script>
+         // 1. Ссылка на ТВОЙ НОВЫЙ вебхук (замени на свою из n8n)
+        const WEBHOOK_GET_USER = "https://твоя-ссылка-из-n8n/webhook/get-user"; 
+        
+        // 2. Функция обновления баланса
+        function fetchUserData() {
+            const userId = tg.initDataUnsafe?.user?.id;
+            
+            // Если мы локально тестим без телеги, ставим заглушку, иначе код упадет
+            if (!userId) {
+                console.log("Нет User ID (тест в браузере?), ставим демо-данные");
+                return; 
+            }
+        
+            fetch(WEBHOOK_GET_USER, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: userId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                // n8n может вернуть массив (если Get Rows), берем первый элемент
+                // или объект. Зависит от того, как настроил n8n.
+                // Обычно Supabase Get возвращает массив: [ {stars: 30, ...} ]
+                const user = Array.isArray(data) ? data[0] : data;
+        
+                if (user) {
+                    // Обновляем HTML
+                    // Убедись, что ID элементов совпадают с твоим HTML
+                    if(document.getElementById('balance-stars')) 
+                        document.getElementById('balance-stars').innerText = user.stars || 0;
+                    
+                    if(document.getElementById('balance-gems')) 
+                        document.getElementById('balance-gems').innerText = user.gems || 0;
+                        
+                    console.log("Баланс обновлен:", user.stars, user.gems);
+                }
+            })
+            .catch(err => console.error("Ошибка получения данных:", err));
+        }
+        
+        // 3. Вызываем функцию сразу, как только приложение загрузилось
+        document.addEventListener('DOMContentLoaded', () => {
+            // ... твой старый код инициализации ...
+            fetchUserData(); // <--- ДОБАВЬ ВОТ ЭТО
+        });
+
         const tg = window.Telegram.WebApp;
         let currentItem = null; 
         let selectedCharacterId = null; 

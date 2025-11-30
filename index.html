@@ -15,6 +15,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
 
     <style>
+        .admin-input {
+            background: #111; border: 1px solid #333; color: white;
+            padding: 10px; border-radius: 10px; width: 100%; margin-bottom: 10px;
+        }
+        .admin-btn {
+            background: #2563eb; color: white; padding: 10px;
+            border-radius: 10px; width: 100%; font-weight: bold;
+        }
         /* === ПРОДВИНУТЫЕ НАСТРОЙКИ ДИЗАЙНА === */
         :root {
             --bg-dark: #050505;
@@ -622,6 +630,30 @@
             Build 2.4.0 (Prices Optimized)
         </div>
     </div>
+    <div id="tab-admin" class="hidden px-4 animate-fade pb-24 min-h-screen">
+        <h2 class="text-2xl font-black mt-6 text-white mb-4">👑 God Mode</h2>
+    
+        <div class="glass-panel p-4 rounded-2xl mb-6">
+            <h3 class="text-sm font-bold text-gray-400 mb-2 uppercase">Начислить игроку</h3>
+            <input type="number" id="admin-target-id" placeholder="ID игрока (chat_id)" class="admin-input">
+            <div class="flex gap-2">
+                <input type="number" id="admin-amount-stars" placeholder="Stars" class="admin-input">
+                <input type="number" id="admin-amount-gems" placeholder="Gems" class="admin-input">
+            </div>
+            <button onclick="adminGiveResource()" class="admin-btn active:scale-95 transition-transform">ОТПРАВИТЬ</button>
+        </div>
+    
+        <div class="glass-panel p-4 rounded-2xl">
+            <h3 class="text-sm font-bold text-gray-400 mb-2 uppercase">Создать Промокод</h3>
+            <input type="text" id="admin-promo-code" placeholder="Код (например HELLO)" class="admin-input uppercase">
+            <div class="flex gap-2">
+                <input type="number" id="admin-promo-stars" placeholder="Stars" class="admin-input">
+                <input type="number" id="admin-promo-gems" placeholder="Gems" class="admin-input">
+            </div>
+            <input type="number" id="admin-promo-uses" placeholder="Кол-во активаций" value="100" class="admin-input">
+            <button onclick="adminCreatePromo()" class="admin-btn bg-green-600 active:scale-95 transition-transform">СОЗДАТЬ КОД</button>
+        </div>
+    </div>
 
     <!-- ================= НИЖНЕЕ МЕНЮ ================= -->
     <div class="fixed bottom-6 left-4 right-4 z-50">
@@ -630,6 +662,11 @@
                 <div class="nav-icon-container"><i class="fa-solid fa-gamepad text-xl group-hover:text-pink-400 transition-colors"></i></div>
                 <span class="text-[9px] font-bold tracking-wider opacity-100 transition-opacity" data-i18n="nav_home">ГЛАВНАЯ</span>
                 <div class="absolute bottom-1 w-1 h-1 bg-pink-500 rounded-full opacity-100 transition-opacity" id="dot-home"></div>
+            </button>
+            <button onclick="showTab('admin')" class="nav-btn hidden w-full h-full flex flex-col items-center justify-center gap-1 text-gray-500 relative transition-all group" id="nav-admin">
+                <div class="nav-icon-container"><i class="fa-solid fa-lock text-xl group-hover:text-red-500 transition-colors"></i></div>
+                <span class="text-[9px] font-bold tracking-wider opacity-70">ADMIN</span>
+                <div class="absolute bottom-1 w-1 h-1 bg-red-500 rounded-full opacity-0 transition-opacity" id="dot-admin"></div>
             </button>
             <button onclick="showTab('shop')" class="nav-btn w-full h-full flex flex-col items-center justify-center gap-1 text-gray-500 relative transition-all group" id="nav-shop">
                 <div class="nav-icon-container"><i class="fa-solid fa-store text-xl group-hover:text-white transition-colors"></i></div>
@@ -1197,6 +1234,68 @@
             const feedback = document.getElementById('copy-feedback');
             feedback.style.opacity = '1';
             setTimeout(() => feedback.style.opacity = '0', 2000);
+        }
+        // 1. Твой ID (возьми его из профиля в боте или get-user вебхука)
+        const ADMIN_IDS = [7672744848, 6546116205]; // Замени на свой реальный ID!
+        const WEBHOOK_ADMIN = "https://a7890becde85.ngrok-free.app/webhook-test/admin-action"; 
+        
+        // 2. Проверка админа при загрузке
+        function checkAdmin() {
+            const userId = tg.initDataUnsafe?.user?.id;
+            if (ADMIN_IDS.includes(userId)) {
+                document.getElementById('nav-admin').classList.remove('hidden'); // Показываем кнопку
+            }
+        }
+        
+        // Добавь вызов checkAdmin() в document.addEventListener('DOMContentLoaded', ...)
+        // document.addEventListener('DOMContentLoaded', () => {
+        //    ... fetchUserData();
+        //    checkAdmin(); <--- ВОТ СЮДА
+        // });
+        
+        // 3. Функции действий
+        function adminGiveResource() {
+            const targetId = document.getElementById('admin-target-id').value;
+            const stars = document.getElementById('admin-amount-stars').value || 0;
+            const gems = document.getElementById('admin-amount-gems').value || 0;
+        
+            if(!targetId) return tg.showAlert("Введи ID игрока!");
+        
+            fetch(WEBHOOK_ADMIN, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    action: 'give_resource',
+                    admin_id: tg.initDataUnsafe?.user?.id, // Для проверки на сервере
+                    target_id: targetId,
+                    stars: parseInt(stars),
+                    gems: parseInt(gems)
+                })
+            }).then(() => tg.showAlert("Отправлено!"))
+              .catch(() => tg.showAlert("Ошибка"));
+        }
+        
+        function adminCreatePromo() {
+            const code = document.getElementById('admin-promo-code').value;
+            const stars = document.getElementById('admin-promo-stars').value || 0;
+            const gems = document.getElementById('admin-promo-gems').value || 0;
+            const uses = document.getElementById('admin-promo-uses').value || 1;
+        
+            if(!code) return tg.showAlert("Введи код!");
+        
+            fetch(WEBHOOK_ADMIN, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    action: 'create_promo',
+                    admin_id: tg.initDataUnsafe?.user?.id,
+                    code: code,
+                    stars: parseInt(stars),
+                    gems: parseInt(gems),
+                    uses: parseInt(uses)
+                })
+            }).then(() => tg.showAlert("Промокод создан!"))
+              .catch(() => tg.showAlert("Ошибка"));
         }
     </script>
 </body>

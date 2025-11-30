@@ -739,6 +739,7 @@
         // ========================================================
         // 🔴 ВАЖНО: Вставь сюда ссылку на Webhook из n8n!
         const WEBHOOK_URL = "https://47ef28c41481.ngrok-free.app/webhook-test/shop-buy"; 
+        const WEBHOOK_LAUNCH = "https://47ef28c41481.ngrok-free.app/webhook-test/start";
         // ========================================================
         
         // --- LOCALIZATION ---
@@ -980,29 +981,24 @@
         // --- ЛОГИКА ЗАПУСКА ПЕРСОНАЖА (ЗАКРЫВАЕТ ОКНО) ---
         function launchCharacter() {
             if (!selectedCharacterId) return;
-            
-            // Вибрация для кайфа
             tg.HapticFeedback.notificationOccurred('success');
         
-            // 1. Шлем данные напрямую в n8n через твой вебхук
-            // Используем тот же URL, что у тебя для оплаты, просто сменим action
-            fetch(WEBHOOK_URL, { 
+            // Шлем запрос на НОВЫЙ вебхук
+            fetch(WEBHOOK_LAUNCH, { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: "launch_character", // <--- Метка, что это запуск, а не оплата
                     character_id: selectedCharacterId,
                     chat_id: tg.initDataUnsafe?.user?.id,
                     first_name: tg.initDataUnsafe?.user?.first_name
                 })
             })
-            .then(response => {
-                // 2. Только когда данные улетели — закрываем окно
-                tg.close();
+            .then(() => {
+                tg.close(); // Закрываем окно, всё ок
             })
-            .catch(error => {
-                console.error('Ошибка:', error);
-                tg.showAlert("Ошибка соединения с n8n");
+            .catch(err => {
+                console.error(err);
+                tg.showAlert("Ошибка. Проверь консоль.");
             });
         }
 

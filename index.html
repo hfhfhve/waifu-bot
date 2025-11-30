@@ -980,16 +980,30 @@
         // --- ЛОГИКА ЗАПУСКА ПЕРСОНАЖА (ЗАКРЫВАЕТ ОКНО) ---
         function launchCharacter() {
             if (!selectedCharacterId) return;
+            
+            // Вибрация для кайфа
             tg.HapticFeedback.notificationOccurred('success');
-            
-            // Эта функция использует tg.sendData, которая специально создана
-            // для передачи данных и ЗАКРЫТИЯ Mini App.
-            tg.sendData(JSON.stringify({
-                action: "set_character",
-                character_id: selectedCharacterId
-            }));
-            
-            closeCharacterModal();
+        
+            // 1. Шлем данные напрямую в n8n через твой вебхук
+            // Используем тот же URL, что у тебя для оплаты, просто сменим action
+            fetch(WEBHOOK_URL, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: "launch_character", // <--- Метка, что это запуск, а не оплата
+                    character_id: selectedCharacterId,
+                    chat_id: tg.initDataUnsafe?.user?.id,
+                    first_name: tg.initDataUnsafe?.user?.first_name
+                })
+            })
+            .then(response => {
+                // 2. Только когда данные улетели — закрываем окно
+                tg.close();
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                tg.showAlert("Ошибка соединения с n8n");
+            });
         }
 
         // --- EXISTING LOGIC ---

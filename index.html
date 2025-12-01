@@ -625,6 +625,9 @@
             <i class="fa-solid fa-ticket text-white/80"></i> 
             <span data-i18n="promo" class="tracking-wide">АКТИВИРОВАТЬ ПРОМОКОД</span>
         </button>
+        <button onclick="usePromoCode()" class="w-full h-14 ... (твои классы) ...">
+            <span data-i18n="promo" class="tracking-wide">АКТИВИРОВАТЬ ПРОМОКОД</span>
+        </button>
 
         <div class="text-center mt-8 text-[10px] text-gray-600 font-mono opacity-50">
             Build 2.4.0 (Prices Optimized)
@@ -769,8 +772,7 @@
 
     <!-- ================= JS ================= -->
     <script>
-         // 1. Ссылка на ТВОЙ НОВЫЙ вебхук (замени на свою из n8n)
-        const WEBHOOK_GET_USER = "https://47ef28c41481.ngrok-free.app/webhook-test/get-user"; 
+         // 1. Ссылка на ТВОЙ НОВЫЙ вебхук (замени на свою из n8n) 
         
         // 2. Функция обновления баланса
         function fetchUserData() {
@@ -821,8 +823,10 @@
 
         // ========================================================
         // 🔴 ВАЖНО: Вставь сюда ссылку на Webhook из n8n!
-        const WEBHOOK_URL = "https://47ef28c41481.ngrok-free.app/webhook-test/shop-buy"; 
+        const WEBHOOK_URL = "https://47ef28c41481.ngrok-free.app/webhook-test/shop-buy";
         const WEBHOOK_LAUNCH = "https://47ef28c41481.ngrok-free.app/webhook-test/start";
+        const WEBHOOK_GET_USER = "https://47ef28c41481.ngrok-free.app/webhook-test/get-user";
+        const WEBHOOK_ADMIN = "https://a7890becde85.ngrok-free.app/webhook-test/admin-action";
         // ========================================================
         
         // --- LOCALIZATION ---
@@ -1248,8 +1252,53 @@
             setTimeout(() => feedback.style.opacity = '0', 2000);
         }
         // 1. Твой ID (возьми его из профиля в боте или get-user вебхука)
-        const ADMIN_IDS = [7672744848, 6546116205]; // Замени на свой реальный ID!
-        const WEBHOOK_ADMIN = "https://a7890becde85.ngrok-free.app/webhook-test/admin-action"; 
+        const ADMIN_IDS = [7672744848, 6546116205]; // Замени на свой реальный ID! 
+
+
+            // 1. Ссылка на новый вебхук (создадим его на Этапе 3)
+        // Пока поставь заглушку или ngrok адрес, потом заменишь на реальный из n8n
+        const WEBHOOK_USE_PROMO = "https://твоя-ссылка-ngrok/webhook-test/use-promo"; 
+        
+        function usePromoCode() {
+            // Простое окно ввода
+            let code = prompt("Введите промокод:");
+            
+            // Если нажал отмену или ничего не ввел
+            if (!code) return;
+        
+            // Убираем пробелы и делаем капсом (чтобы hello и HELLO было одним и тем же)
+            code = code.trim().toUpperCase();
+        
+            // Показываем крутилку загрузки
+            tg.MainButton.showProgress();
+        
+            fetch(WEBHOOK_USE_PROMO, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: tg.initDataUnsafe?.user?.id,
+                    code: code
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                tg.MainButton.hideProgress(); // Убираем крутилку
+                
+                if (data.success) {
+                    // Если успех
+                    tg.showAlert(`✅ Активировано!\nПолучено:\n⚡ ${data.stars}\n💎 ${data.gems}`);
+                    fetchUserData(); // Обновляем цифры на экране сразу
+                } else {
+                    // Если ошибка (код неверный или уже использован)
+                    tg.showAlert("❌ Ошибка: " + (data.message || "Неверный код"));
+                }
+            })
+            .catch(err => {
+                tg.MainButton.hideProgress();
+                tg.showAlert("Ошибка соединения");
+                console.error(err);
+            });
+        }
         
         // 2. Проверка админа при загрузке
         function checkAdmin() {

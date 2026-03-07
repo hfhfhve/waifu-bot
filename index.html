@@ -1103,31 +1103,56 @@
         // --- EXISTING LOGIC ---
         function showTab(tabId) {
             tg.HapticFeedback.impactOccurred('light');
+            
+            // 1. СКРЫВАЕМ ВСЕ ВКЛАДКИ (добавили tab-admin)
             document.getElementById('tab-home').classList.add('hidden');
             document.getElementById('tab-shop').classList.add('hidden');
             document.getElementById('tab-profile').classList.add('hidden');
+            document.getElementById('tab-admin').classList.add('hidden'); // <--- ИСПРАВЛЕНИЕ ЗДЕСЬ
             
-            ['home', 'shop', 'profile'].forEach(id => {
-                document.getElementById(`nav-${id}`).classList.remove('nav-active', 'text-white');
-                document.getElementById(`nav-${id}`).classList.add('text-gray-500');
-                document.getElementById(`dot-${id}`).classList.replace('opacity-100', 'opacity-0');
+            // 2. Сбрасываем стили кнопок (добавили 'admin' в массив)
+            ['home', 'shop', 'profile', 'admin'].forEach(id => {        // <--- ИСПРАВЛЕНИЕ ЗДЕСЬ
+                const navBtn = document.getElementById(`nav-${id}`);
+                const dot = document.getElementById(`dot-${id}`);
+                if (navBtn && dot) { // защита от ошибок
+                    navBtn.classList.remove('nav-active', 'text-white');
+                    navBtn.classList.add('text-gray-500');
+                    dot.classList.replace('opacity-100', 'opacity-0');
+                }
             });
 
+            // 3. Показываем нужную вкладку
             const activeTab = document.getElementById(`tab-${tabId}`);
-            activeTab.classList.remove('hidden');
-            activeTab.classList.remove('animate-fade-up');
-            void activeTab.offsetWidth; activeTab.classList.add('animate-fade-up');
+            if (activeTab) {
+                activeTab.classList.remove('hidden');
+                activeTab.classList.remove('animate-fade-up');
+                void activeTab.offsetWidth; 
+                activeTab.classList.add('animate-fade-up');
+            }
 
-            document.getElementById(`nav-${tabId}`).classList.add('nav-active', 'text-white');
-            document.getElementById(`nav-${tabId}`).classList.remove('text-gray-500');
-            document.getElementById(`dot-${tabId}`).classList.replace('opacity-0', 'opacity-100');
+            // 4. Активируем нужную кнопку в меню
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            const activeDot = document.getElementById(`dot-${tabId}`);
+            if (activeNav && activeDot) {
+                activeNav.classList.add('nav-active', 'text-white');
+                activeNav.classList.remove('text-gray-500');
+                activeDot.classList.replace('opacity-0', 'opacity-100');
+            }
 
-            // Header logic
+            // 5. Логика верхней шапки (Header)
             const genderSwitch = document.getElementById('gender-switch');
             const shopSwitch = document.getElementById('shop-switch');
-            if(tabId === 'shop') { genderSwitch.classList.add('hidden'); shopSwitch.classList.remove('hidden'); } 
-            else if (tabId === 'home') { shopSwitch.classList.add('hidden'); genderSwitch.classList.remove('hidden'); } 
-            else { shopSwitch.classList.add('hidden'); genderSwitch.classList.add('hidden'); }
+            if(tabId === 'shop') { 
+                genderSwitch.classList.add('hidden'); 
+                shopSwitch.classList.remove('hidden'); 
+            } else if (tabId === 'home') { 
+                shopSwitch.classList.add('hidden'); 
+                genderSwitch.classList.remove('hidden'); 
+            } else { 
+                shopSwitch.classList.add('hidden'); 
+                genderSwitch.classList.add('hidden'); 
+            }
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 

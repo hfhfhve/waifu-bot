@@ -1004,8 +1004,35 @@
             // Запрашиваем баланс
             fetchUserData(); 
             
-            // Проверяем, админ ли это (показываем кнопку)
+            // Проверяем, админ ли это
             checkAdmin(); 
+
+            // ===== НОВЫЙ КОД: ПОДТЯГИВАЕМ ДАННЫЕ ЮЗЕРА =====
+            const user = tg.initDataUnsafe?.user;
+            if (user) {
+                // Вставляем имя юзера
+                const profileName = document.getElementById('profile-name');
+                if (profileName) {
+                    profileName.innerText = user.first_name || 'Игрок';
+                }
+
+                // Вставляем аватарку юзера (если она у него есть и не скрыта настройками приватности)
+                const profileAvatar = document.getElementById('profile-avatar');
+                if (profileAvatar && user.photo_url) {
+                    profileAvatar.src = user.photo_url;
+                } else if (profileAvatar && user.first_name) {
+                    // Если аватарки нет, ставим первую букву его имени на заглушку
+                    const firstLetter = user.first_name.charAt(0).toUpperCase();
+                    profileAvatar.src = `https://placehold.co/200x200/222/fff?text=${firstLetter}`;
+                }
+                
+                // Бонус: вставляем реальный ID юзера под именем вместо "84932921"
+                const idDisplay = document.querySelector('#copy-btn span');
+                if (idDisplay) {
+                    idDisplay.innerText = `ID: ${user.id}`;
+                }
+            }
+            // ===============================================
         });
 
         function renderCharacters() {

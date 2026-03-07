@@ -1672,6 +1672,8 @@
 
         const WEBHOOK_USE_PROMO = "https://5b5d261635a0.ngrok-free.app/webhook-test/use-promo"; 
 
+        const WEBHOOK_BONUS = "ТВОЙ_НОВЫЙ_URL_ИЗ_N8N/webhook/claim-bonus";
+
         // ========================================================
 
         
@@ -1780,6 +1782,38 @@
 
             renderCharacters();
 
+        }
+
+
+
+
+        function claimDailyBonus() {
+            tg.HapticFeedback.impactOccurred('medium');
+            tg.MainButton.showProgress();
+        
+            fetch(WEBHOOK_BONUS, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: tg.initDataUnsafe?.user?.id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                tg.MainButton.hideProgress();
+                if (data.success) {
+                    tg.showAlert(`🎁 Ежедневный бонус получен!\nВам начислено: 15 ⚡️`);
+                    fetchUserData(); // Эта твоя функция сразу обновит баланс в шапке
+                    
+                    // Меняем текст на кнопке
+                    document.getElementById('daily-text').innerHTML = '<span class="text-gray-500">Приходи завтра!</span>';
+                } else {
+                    tg.showAlert(`⏱ Бонус пока недоступен.\nОсталось ждать: ${data.hoursLeft} ч.`);
+                }
+            })
+            .catch(err => {
+                tg.MainButton.hideProgress();
+                tg.showAlert("Ошибка соединения с сервером.");
+                console.error(err);
+            });
         }
 
 

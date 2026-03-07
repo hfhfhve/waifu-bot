@@ -1104,33 +1104,33 @@
         function showTab(tabId) {
             tg.HapticFeedback.impactOccurred('light');
             
-            // 1. СКРЫВАЕМ ВСЕ ВКЛАДКИ (добавили tab-admin)
+            // 1. ЖЕСТКО СКРЫВАЕМ АБСОЛЮТНО ВСЕ ВКЛАДКИ
             document.getElementById('tab-home').classList.add('hidden');
             document.getElementById('tab-shop').classList.add('hidden');
             document.getElementById('tab-profile').classList.add('hidden');
-            document.getElementById('tab-admin').classList.add('hidden'); // <--- ИСПРАВЛЕНИЕ ЗДЕСЬ
+            document.getElementById('tab-admin').classList.add('hidden'); // Админка скрывается тут!
             
-            // 2. Сбрасываем стили кнопок (добавили 'admin' в массив)
-            ['home', 'shop', 'profile', 'admin'].forEach(id => {        // <--- ИСПРАВЛЕНИЕ ЗДЕСЬ
+            // 2. Сбрасываем стили со всех кнопок меню
+            ['home', 'shop', 'profile', 'admin'].forEach(id => {
                 const navBtn = document.getElementById(`nav-${id}`);
                 const dot = document.getElementById(`dot-${id}`);
-                if (navBtn && dot) { // защита от ошибок
+                if (navBtn && dot) {
                     navBtn.classList.remove('nav-active', 'text-white');
                     navBtn.classList.add('text-gray-500');
                     dot.classList.replace('opacity-100', 'opacity-0');
                 }
             });
 
-            // 3. Показываем нужную вкладку
+            // 3. Показываем ТОЛЬКО ту вкладку, на которую нажали
             const activeTab = document.getElementById(`tab-${tabId}`);
             if (activeTab) {
                 activeTab.classList.remove('hidden');
                 activeTab.classList.remove('animate-fade-up');
-                void activeTab.offsetWidth; 
+                void activeTab.offsetWidth; // Перезапуск анимации
                 activeTab.classList.add('animate-fade-up');
             }
 
-            // 4. Активируем нужную кнопку в меню
+            // 4. Подсвечиваем активную кнопку в нижнем меню
             const activeNav = document.getElementById(`nav-${tabId}`);
             const activeDot = document.getElementById(`dot-${tabId}`);
             if (activeNav && activeDot) {
@@ -1139,10 +1139,10 @@
                 activeDot.classList.replace('opacity-0', 'opacity-100');
             }
 
-            // 5. Логика верхней шапки (Header)
+            // 5. Логика переключателей в верхней шапке
             const genderSwitch = document.getElementById('gender-switch');
             const shopSwitch = document.getElementById('shop-switch');
-            if(tabId === 'shop') { 
+            if (tabId === 'shop') { 
                 genderSwitch.classList.add('hidden'); 
                 shopSwitch.classList.remove('hidden'); 
             } else if (tabId === 'home') { 
@@ -1153,6 +1153,7 @@
                 genderSwitch.classList.add('hidden'); 
             }
             
+            // Скроллим страницу наверх
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 

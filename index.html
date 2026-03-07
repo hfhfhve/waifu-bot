@@ -1560,82 +1560,72 @@
 
     <script>
 
-         // 1. Ссылка на ТВОЙ НОВЫЙ вебхук (замени на свою из n8n) 
-
-        
 
         // 2. Функция обновления баланса
-
         function fetchUserData() {
-
             const userId = tg.initDataUnsafe?.user?.id;
-
             
-
             // Если мы локально тестим без телеги, ставим заглушку, иначе код упадет
-
             if (!userId) {
-
                 console.log("Нет User ID (тест в браузере?), ставим демо-данные");
-
                 return; 
-
             }
-
         
-
             fetch(WEBHOOK_GET_USER, {
-
                 method: 'POST',
-
                 headers: { 'Content-Type': 'application/json' },
-
                 body: JSON.stringify({ chat_id: userId })
-
             })
-
             .then(res => res.json())
-
             .then(data => {
-
-                // n8n может вернуть массив (если Get Rows), берем первый элемент
-
-                // или объект. Зависит от того, как настроил n8n.
-
-                // Обычно Supabase Get возвращает массив: [ {stars: 30, ...} ]
-
                 const user = Array.isArray(data) ? data[0] : data;
-
         
-
                 if (user) {
-
-                    // Обновляем HTML
-
-                    // Убедись, что ID элементов совпадают с твоим HTML
-
+                    // 1. Обновляем баланс
                     if(document.getElementById('balance-stars')) 
-
                         document.getElementById('balance-stars').innerText = user.stars || 0;
-
                     
-
                     if(document.getElementById('balance-gems')) 
-
                         document.getElementById('balance-gems').innerText = user.gems || 0;
-
                         
-
                     console.log("Баланс обновлен:", user.stars, user.gems);
 
+                    // 2. Логика проверки ежедневного бонуса (Обновление в 00:00 UTC)
+                    if (user.last_bonus_date) {
+                        const lastClaim = new Date(user.last_bonus_date);
+                        const now = new Date();
+                        
+                        // Проверяем, тот ли же это самый день по UTC
+                        const isSameDay = 
+                            now.getUTCFullYear() === lastClaim.getUTCFullYear() &&
+                            now.getUTCMonth() === lastClaim.getUTCMonth() &&
+                            now.getUTCDate() === lastClaim.getUTCDate();
+                    
+                        if (isSameDay) {
+                            // Если день тот же самый — выключаем карточку
+                            const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+                            const hoursLeft = Math.floor((tomorrow - now) / (1000 * 60 * 60));
+                            
+                            const bonusCard = document.getElementById('bonus-card');
+                            if (bonusCard) {
+                                bonusCard.classList.remove('cursor-pointer', 'active:scale-98', 'bg-gradient-to-r', 'from-[#1a1500]', 'to-[#2a1a00]', 'border-yellow-500/20');
+                                bonusCard.classList.add('opacity-50', 'bg-[#1a1a1a]', 'cursor-not-allowed', 'border-white/5');
+                                bonusCard.onclick = null; 
+                            }
+                            
+                            const dailyTitle = document.getElementById('daily-title');
+                            const dailyText = document.getElementById('daily-text');
+                            if (dailyTitle) dailyTitle.innerText = "Бонус получен";
+                            if (dailyText) dailyText.innerHTML = `<span class="text-gray-500">Обновится через ~${hoursLeft} ч.</span>`;
+                            
+                            const giftIcon = bonusCard.querySelector('.animate-pulse');
+                            if (giftIcon) giftIcon.classList.remove('animate-pulse');
+                        }
+                    }
                 }
-
             })
-
             .catch(err => console.error("Ошибка получения данных:", err));
-
         }
-
         
 
         // 3. Вызываем функцию сразу, как только приложение загрузилось
@@ -1672,7 +1662,7 @@
 
         const WEBHOOK_USE_PROMO = "https://5b5d261635a0.ngrok-free.app/webhook-test/use-promo"; 
 
-        const WEBHOOK_BONUS = "ТВОЙ_НОВЫЙ_URL_ИЗ_N8N/webhook/claim-bonus";
+        const WEBHOOK_BONUS = "https://0e31-95-85-243-114.ngrok-free.app/webhook-test/claim-bonus";
 
         // ========================================================
 

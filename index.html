@@ -736,30 +736,25 @@
     <div id="character-modal" class="fixed inset-0 z-[100] hidden">
         <div class="absolute inset-0 modal-overlay" onclick="closeCharacterModal()"></div>
         <div class="absolute bottom-0 left-0 w-full char-modal-content bg-[#111] overflow-hidden flex flex-col">
-            <!-- Верхняя картинка -->
             <div class="relative w-full h-1/2">
                 <img id="char-modal-img" src="" class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent"></div>
-                <!-- Кнопка закрытия -->
                 <button onclick="closeCharacterModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-90 transition-transform">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             
-            <!-- Контент -->
-            <div class="flex-1 p-6 flex flex-col relative -mt-12 z-10">
-                <div class="flex items-center gap-2 mb-3" id="char-modal-tags">
-                    <!-- Теги через JS -->
-                </div>
+            <div class="flex-1 min-h-0 p-6 pb-8 flex flex-col relative -mt-12 z-10">
+                <div class="flex items-center gap-2 mb-3 shrink-0" id="char-modal-tags">
+                    </div>
                 
-                <h2 id="char-modal-name" class="text-3xl font-black text-white mb-2 leading-none">Name</h2>
+                <h2 id="char-modal-name" class="text-3xl font-black text-white mb-2 leading-none shrink-0">Name</h2>
                 
-                <div class="flex-1 overflow-y-auto pr-2 mb-6 text-sm text-gray-300 leading-relaxed custom-scroll" id="char-modal-desc">
+                <div class="flex-1 overflow-y-auto pr-2 mb-4 text-sm text-gray-300 leading-relaxed custom-scroll" id="char-modal-desc">
                     Description goes here...
                 </div>
                 
-                <!-- Кнопка запуска -->
-                <button onclick="launchCharacter()" class="w-full h-14 bg-gradient-to-r from-pink-600 to-purple-700 rounded-2xl font-bold text-lg shadow-[0_10px_30px_rgba(219,39,119,0.4)] active:scale-98 transition-all flex items-center justify-center gap-3 border border-white/10 relative overflow-hidden group">
+                <button onclick="launchCharacter()" class="shrink-0 mt-auto w-full h-14 bg-gradient-to-r from-pink-600 to-purple-700 rounded-2xl font-bold text-lg shadow-[0_10px_30px_rgba(219,39,119,0.4)] active:scale-98 transition-all flex items-center justify-center gap-3 border border-white/10 relative overflow-hidden group">
                     <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
                     <i class="fa-solid fa-play"></i>
                     <span data-i18n="launch">ЗАПУСТИТЬ</span>

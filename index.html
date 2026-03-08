@@ -1533,6 +1533,10 @@
         </div>
 
     </div>
+    <div id="custom-toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl transition-all duration-400 transform -translate-y-24 opacity-0 border w-[90%] max-w-sm pointer-events-none">
+        <div id="toast-icon" class="text-2xl drop-shadow-md"></div>
+        <div id="toast-text" class="text-sm font-bold text-white whitespace-pre-line leading-tight"></div>
+    </div>
 
 
 
@@ -1540,6 +1544,40 @@
 
     <script>
 
+
+        // --- КРАСИВЫЕ УВЕДОМЛЕНИЯ ---
+        let toastTimeout;
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('custom-toast');
+            const icon = document.getElementById('toast-icon');
+            const text = document.getElementById('toast-text');
+
+            text.innerText = message;
+
+            // Настраиваем цвета и иконки в зависимости от типа
+            if (type === 'success') {
+                toast.className = "fixed top-4 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-[0_10px_40px_rgba(219,39,119,0.3)] transition-all duration-400 transform bg-[#1a0f14] border border-pink-500/50 w-[90%] max-w-sm pointer-events-none";
+                icon.innerHTML = '🎁';
+                tg.HapticFeedback.notificationOccurred('success');
+            } else if (type === 'wait' || type === 'error') {
+                toast.className = "fixed top-4 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-[0_10px_40px_rgba(234,179,8,0.2)] transition-all duration-400 transform bg-[#1a1500] border border-yellow-500/50 w-[90%] max-w-sm pointer-events-none";
+                icon.innerHTML = '⏱';
+                tg.HapticFeedback.notificationOccurred('warning');
+            }
+
+            // Показываем плашку (выезжает сверху)
+            toast.classList.remove('-translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            // Очищаем старый таймер, если юзер быстро нажал дважды
+            clearTimeout(toastTimeout);
+
+            // Прячем через 3.5 секунды
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-24', 'opacity-0');
+            }, 3500);
+        }
 
         // 2. Функция обновления баланса
         function fetchUserData() {
@@ -1777,9 +1815,8 @@
 
 
         function claimDailyBonus() {
-            tg.HapticFeedback.impactOccurred('medium');
             tg.MainButton.showProgress();
-        
+
             fetch(WEBHOOK_BONUS, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1789,27 +1826,21 @@
             .then(data => {
                 tg.MainButton.hideProgress();
                 if (data.success) {
-                    // Формируем красивое сообщение в зависимости от того, дали ли гемы
-                    let msg = `🎁 Бонус за День ${data.newStreak} получен!\n\nВам начислено:\n⚡️ ${data.addedStars} энергии`;
-                    if (data.addedGems > 0) {
-                        msg += `\n💎 ${data.addedGems} гемов`;
-                    }
-                    if (data.newStreak === 7) {
-                        msg += `\n\n🎉 Поздравляем! Вы забрали супер-приз 7-го дня!`;
-                    }
-        
-                    tg.showAlert(msg);
+                    let msg = `Бонус за День ${data.newStreak} получен!\nНачислено: ⚡️ ${data.addedStars}`;
+                    if (data.addedGems > 0) msg += ` и 💎 ${data.addedGems}`;
                     
-                    // Эта функция сама обновит цифры сверху и сделает карточку серой
+                    // ВЫЗЫВАЕМ НАШ КРАСИВЫЙ ТОСТ
+                    showToast(msg, 'success');
+                    
                     fetchUserData(); 
                 } else {
-                    tg.showAlert(`⏱ Бонус пока недоступен.\nОсталось ждать: ~${data.hoursLeft} ч.`);
+                    // ВЫЗЫВАЕМ ЖЕЛТЫЙ ТОСТ С ЧАСИКАМИ
+                    showToast(`Бонус пока недоступен.\nОсталось ждать: ~${data.hoursLeft} ч.`, 'wait');
                 }
             })
             .catch(err => {
                 tg.MainButton.hideProgress();
-                tg.showAlert("Ошибка соединения с сервером.");
-                console.error(err);
+                showToast("Ошибка соединения с сервером.", 'error');
             });
         }
 

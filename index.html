@@ -1564,43 +1564,62 @@
                     // 1. Обновляем баланс
                     if(document.getElementById('balance-stars')) 
                         document.getElementById('balance-stars').innerText = user.stars || 0;
-                    
                     if(document.getElementById('balance-gems')) 
                         document.getElementById('balance-gems').innerText = user.gems || 0;
-                        
-                    console.log("Баланс обновлен:", user.stars, user.gems);
 
-                    // 2. Логика проверки ежедневного бонуса (Обновление в 00:00 UTC)
+                    // 2. Считаем, какой сейчас день серии
+                    let nextDay = 1;
+                    let isSameDay = false;
+                    let hoursLeft = 0;
+
                     if (user.last_bonus_date) {
                         const lastClaim = new Date(user.last_bonus_date);
                         const now = new Date();
                         
-                        // Проверяем, тот ли же это самый день по UTC
-                        const isSameDay = 
-                            now.getUTCFullYear() === lastClaim.getUTCFullYear() &&
-                            now.getUTCMonth() === lastClaim.getUTCMonth() &&
-                            now.getUTCDate() === lastClaim.getUTCDate();
-                    
-                        if (isSameDay) {
-                            // Если день тот же самый — выключаем карточку
-                            const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-                            const hoursLeft = Math.floor((tomorrow - now) / (1000 * 60 * 60));
+                        // Получаем время в полночь по UTC
+                        const todayMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+                        const lastClaimMidnight = Date.UTC(lastClaim.getUTCFullYear(), lastClaim.getUTCMonth(), lastClaim.getUTCDate());
+                        
+                        // Разница в днях
+                        const diffDays = (todayMidnight - lastClaimMidnight) / 86400000;
+
+                        if (diffDays === 1) {
+                            nextDay = (user.bonus_streak || 0) + 1;
+                            if (nextDay > 7) nextDay = 1;
+                        } else if (diffDays === 0) {
+                            nextDay = user.bonus_streak || 1; // Сегодня уже брали, показываем текущий день
+                            isSameDay = true;
                             
-                            const bonusCard = document.getElementById('bonus-card');
-                            if (bonusCard) {
-                                bonusCard.classList.remove('cursor-pointer', 'active:scale-98', 'bg-gradient-to-r', 'from-[#1a1500]', 'to-[#2a1a00]', 'border-yellow-500/20');
-                                bonusCard.classList.add('opacity-50', 'bg-[#1a1a1a]', 'cursor-not-allowed', 'border-white/5');
-                                bonusCard.onclick = null; 
-                            }
-                            
-                            const dailyTitle = document.getElementById('daily-title');
-                            const dailyText = document.getElementById('daily-text');
-                            if (dailyTitle) dailyTitle.innerText = "Бонус получен";
-                            if (dailyText) dailyText.innerHTML = `<span class="text-gray-500">Обновится через ~${hoursLeft} ч.</span>`;
-                            
-                            const giftIcon = bonusCard.querySelector('.animate-pulse');
-                            if (giftIcon) giftIcon.classList.remove('animate-pulse');
+                            // Считаем часы до завтра
+                            const tomorrow = new Date(todayMidnight + 86400000);
+                            hoursLeft = Math.floor((tomorrow - now) / 3600000);
+                        } else {
+                            nextDay = 1; // Пропустил день, начинаем заново
                         }
+                    }
+
+                    // 3. Пишем "День X" на карточке!
+                    const dailyTitle = document.getElementById('daily-title');
+                    if (dailyTitle) dailyTitle.innerText = "День " + nextDay;
+
+                    // 4. Логика блокировки, если сегодня уже забирал
+                    if (isSameDay) {
+                        const bonusCard = document.getElementById('bonus-card');
+                        if (bonusCard) {
+                            bonusCard.classList.remove('cursor-pointer', 'active:scale-98', 'bg-gradient-to-r', 'from-[#1a1500]', 'to-[#2a1a00]', 'border-yellow-500/20');
+                            bonusCard.classList.add('opacity-50', 'bg-[#1a1a1a]', 'cursor-not-allowed', 'border-white/5');
+                            bonusCard.onclick = null; 
+                        }
+                        
+                        const dailyText = document.getElementById('daily-text');
+                        if (dailyText) dailyText.innerHTML = `<span class="text-gray-500">Обновится через ~${hoursLeft} ч.</span>`;
+                        
+                        const giftIcon = bonusCard.querySelector('.animate-pulse');
+                        if (giftIcon) giftIcon.classList.remove('animate-pulse');
+                    } else {
+                        // Если можно забрать прямо сейчас
+                        const dailyText = document.getElementById('daily-text');
+                        if (dailyText) dailyText.innerHTML = `<span class="text-yellow-400 font-bold">Нажми, чтобы забрать!</span>`;
                     }
                 }
             })
@@ -1636,7 +1655,7 @@
 
         const WEBHOOK_LAUNCH = "https://f0aa-95-85-243-114.ngrok-free.app/webhook-test/start";
 
-        const WEBHOOK_GET_USER = "https://0e31-95-85-243-114.ngrok-free.app/webhook-test/get-user";
+        const WEBHOOK_GET_USER = "https://5c24-95-85-243-114.ngrok-free.app/webhook-test/get-user";
 
         const WEBHOOK_ADMIN = "https://f4c7-144-31-90-51.ngrok-free.app/webhook-test/admin-action";
 
@@ -1770,13 +1789,21 @@
             .then(data => {
                 tg.MainButton.hideProgress();
                 if (data.success) {
-                    tg.showAlert(`🎁 Ежедневный бонус получен!\nВам начислено: 15 ⚡️`);
-                    fetchUserData(); // Эта твоя функция сразу обновит баланс в шапке
+                    // Формируем красивое сообщение в зависимости от того, дали ли гемы
+                    let msg = `🎁 Бонус за День ${data.newStreak} получен!\n\nВам начислено:\n⚡️ ${data.addedStars} энергии`;
+                    if (data.addedGems > 0) {
+                        msg += `\n💎 ${data.addedGems} гемов`;
+                    }
+                    if (data.newStreak === 7) {
+                        msg += `\n\n🎉 Поздравляем! Вы забрали супер-приз 7-го дня!`;
+                    }
+        
+                    tg.showAlert(msg);
                     
-                    // Меняем текст на кнопке
-                    document.getElementById('daily-text').innerHTML = '<span class="text-gray-500">Приходи завтра!</span>';
+                    // Эта функция сама обновит цифры сверху и сделает карточку серой
+                    fetchUserData(); 
                 } else {
-                    tg.showAlert(`⏱ Бонус пока недоступен.\nОсталось ждать: ${data.hoursLeft} ч.`);
+                    tg.showAlert(`⏱ Бонус пока недоступен.\nОсталось ждать: ~${data.hoursLeft} ч.`);
                 }
             })
             .catch(err => {
